@@ -73,6 +73,9 @@ ColumnLayout {
             getApi.tickerName = Plasmoid.configuration.tickerName;
             getApi.updatePrice();
         }
+        onTickerValueChanged: {
+            getApi.updatePrice();
+        }
     }
 
     // Determine which price text should be shown with multiplier applied
@@ -80,11 +83,18 @@ ColumnLayout {
         if (getApi.price === "E") {
             return "Err";
         }
-        if (getApi.price !== null && !isNaN(getApi.price)) {
-            // Apply price multiplier from configuration
-            var price = parseFloat(getApi.price);
-            var multiplier = Plasmoid.configuration.priceMultiplier || 1; // Default to 1 if multiplier is not set
-            return formatPrice((price * multiplier).toFixed(Plasmoid.configuration.decimalPlaces));
+        console.log("Ticker Value:", Plasmoid.configuration.tickerValue);
+        if (Plasmoid.configuration.tickerValue === "daily_price_change_percantage") {
+            if (getApi.daily_price_change_percantage !== null && !isNaN(getApi.daily_price_change_percantage)) {
+                return getApi.daily_price_change_percantage.toFixed(Plasmoid.configuration.decimalPlaces) + "%";
+            }
+        } else {
+            if (getApi.price !== null && !isNaN(getApi.price)) {
+                // Apply price multiplier from configuration
+                var price = parseFloat(getApi.price);
+                var multiplier = Plasmoid.configuration.priceMultiplier || 1;
+                return formatPrice((price * multiplier).toFixed(Plasmoid.configuration.decimalPlaces));
+            }
         }
         return "?";
     }
@@ -102,7 +112,7 @@ ColumnLayout {
         }
         font.bold: Plasmoid.configuration.textBold
         font.capitalization: Font.AllUppercase
-        text: (Plasmoid.configuration.tickerName || "Unknown ticker") + (Plasmoid.configuration.priceMultiplier !== "1" && Plasmoid.configuration.priceMultiplier !== "" ? "*" : "")
+        text: (Plasmoid.configuration.tickerName || "Unknown ticker") + (Plasmoid.configuration.priceMultiplier !== "1" && Plasmoid.configuration.priceMultiplier !== "" && Plasmoid.configuration.tickerValue !== "daily_price_change_percantage" ? "*" : "")
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignTop
     }
@@ -114,6 +124,13 @@ ColumnLayout {
         color: {
             if (displayedPrice === "Err") {
                 return Plasmoid.configuration.errorColor || Kirigami.Theme.negativeTextColor;
+            }
+            if (Plasmoid.configuration.tickerValue === "daily_price_change_percantage") {
+                if (getApi.daily_price_change_percantage > 0) {
+                    return Kirigami.Theme.positiveTextColor;
+                } else if (getApi.daily_price_change_percantage < 0) {
+                    return Kirigami.Theme.negativeTextColor;
+                }
             }
             return Plasmoid.configuration.textColor || Kirigami.Theme.textColor;
         }
