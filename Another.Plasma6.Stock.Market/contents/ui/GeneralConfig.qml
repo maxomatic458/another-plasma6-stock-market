@@ -122,7 +122,7 @@ Item {
                     cfg_defaultValue: "current_price"
                     model: [
                         { text: i18n("Current Price"), value: "current_price" },
-                        { text: i18n("Daily Price Change (%)"), value: "daily_price_change_percantage" }
+                        { text: i18n("Daily Price Change (%)"), value: "daily_price_change_percentage" }
                     ]
                     onCurrentValueChanged: {
                         plasmoid.configuration.tickerValue = currentValue;

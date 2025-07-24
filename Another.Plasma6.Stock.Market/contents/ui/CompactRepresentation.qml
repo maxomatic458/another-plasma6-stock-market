@@ -53,6 +53,21 @@ ColumnLayout {
         return formattedPrice;
     }
 
+    function formatPriceChange(priceChange) {
+        let numChange = parseFloat(priceChange);
+        if (isNaN(numChange)) {
+            return priceChange;
+        }
+
+        let formattedChange = formatPrice(numChange.toFixed(Plasmoid.configuration.decimalPlaces));
+
+        if (numChange >= 0) {
+            formattedChange = "+" + formattedChange;
+        }
+
+        return formattedChange + "%";
+    }
+
     Layout.minimumWidth: tickerText.implicitWidth + pixelFontVar * 4
     Layout.minimumHeight: heightroot
 
@@ -83,20 +98,21 @@ ColumnLayout {
         if (getApi.price === "E") {
             return "Err";
         }
-        console.log("Ticker Value:", Plasmoid.configuration.tickerValue);
-        if (Plasmoid.configuration.tickerValue === "daily_price_change_percantage") {
-            if (getApi.daily_price_change_percantage !== null && !isNaN(getApi.daily_price_change_percantage)) {
-                return getApi.daily_price_change_percantage.toFixed(Plasmoid.configuration.decimalPlaces) + "%";
-            }
-        } else {
-            if (getApi.price !== null && !isNaN(getApi.price)) {
-                // Apply price multiplier from configuration
-                var price = parseFloat(getApi.price);
-                var multiplier = Plasmoid.configuration.priceMultiplier || 1;
-                return formatPrice((price * multiplier).toFixed(Plasmoid.configuration.decimalPlaces));
-            }
+
+        var multiplier = Plasmoid.configuration.priceMultiplier || 1;
+        switch (Plasmoid.configuration.tickerValue) {
+            case "daily_price_change_percentage":
+                var priceChange = parseFloat(getApi.dailyPriceChangePercentage);
+                return formatPriceChange(priceChange * multiplier);
+            case "current_price":
+                if (getApi.price !== null && !isNaN(getApi.price)) {
+                    var price = parseFloat(getApi.price);
+                    return formatPrice((price * multiplier).toFixed(Plasmoid.configuration.decimalPlaces));
+                }
+                return "?";
+            default:
+                return "Err";
         }
-        return "?";
     }
 
     Text {
@@ -112,7 +128,7 @@ ColumnLayout {
         }
         font.bold: Plasmoid.configuration.textBold
         font.capitalization: Font.AllUppercase
-        text: (Plasmoid.configuration.tickerName || "Unknown ticker") + (Plasmoid.configuration.priceMultiplier !== "1" && Plasmoid.configuration.priceMultiplier !== "" && Plasmoid.configuration.tickerValue !== "daily_price_change_percantage" ? "*" : "")
+        text: (Plasmoid.configuration.tickerName || "Unknown ticker") + (Plasmoid.configuration.priceMultiplier !== "1" && Plasmoid.configuration.priceMultiplier !== "" ? "*" : "")
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignTop
     }
@@ -125,10 +141,10 @@ ColumnLayout {
             if (displayedPrice === "Err") {
                 return Plasmoid.configuration.errorColor || Kirigami.Theme.negativeTextColor;
             }
-            if (Plasmoid.configuration.tickerValue === "daily_price_change_percantage") {
-                if (getApi.daily_price_change_percantage > 0) {
+            if (Plasmoid.configuration.tickerValue === "daily_price_change_percentage") {
+                if (getApi.dailyPriceChangePercentage > 0) {
                     return Kirigami.Theme.positiveTextColor;
-                } else if (getApi.daily_price_change_percantage < 0) {
+                } else if (getApi.dailyPriceChangePercentage < 0) {
                     return Kirigami.Theme.negativeTextColor;
                 }
             }
